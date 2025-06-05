@@ -4,14 +4,15 @@ import com.literAlura.model.Autor;
 import com.literAlura.model.Datos;
 import com.literAlura.model.DatosLibro;
 import com.literAlura.model.Libro;
+import com.literAlura.repository.AutorRepository;
 import com.literAlura.repository.LibroRepository;
 import com.literAlura.utils.ConsumoApi;
 import com.literAlura.utils.ConvierteDatos;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
+import java.util.stream.Collectors;
 
 public class Challenge {
 
@@ -19,10 +20,11 @@ public class Challenge {
     private ConvierteDatos convierteDatos = new ConvierteDatos();
     private final String URL_BASE = "https://gutendex.com/books/";
     private Scanner sc = new Scanner(System.in);
-    private LibroRepository repositorio;
-
-    public Challenge(LibroRepository libroRepository) {
-        this.repositorio = libroRepository;
+    private LibroRepository libroRepository;
+    private AutorRepository autorRepository;
+    public Challenge(LibroRepository libroRepository, AutorRepository autorRepository) {
+        this.libroRepository = libroRepository;
+        this.autorRepository = autorRepository;
     }
 
     public void menu(){
@@ -32,6 +34,12 @@ public class Challenge {
             switch (opcion){
                 case 1:
                     guardarLibroBuscado();
+                    break;
+                case 2:
+                    getLibrosRegistrados();
+                    break;
+                case 3:
+                    getAutoresRegistrados();
                     break;
             }
         }
@@ -72,38 +80,66 @@ public class Challenge {
     private void guardarLibroBuscado(){
         DatosLibro datosLibro = getDatosLibro();
         if(datosLibro == null) return;
+        Optional<Libro> libroExistente = libroRepository.findByTitulo(datosLibro.titulo());
+        if(libroExistente.isPresent()){
+            System.out.println("El libro " + libroExistente.get().getTitulo() + " ya existe.");
+            return;
+        }
+        Optional<Autor> autorExistente = autorRepository.findByNombre(datosLibro.autores().get(0).nombre());
+        Autor autor;
+        if(autorExistente.isPresent()){
+            autor = autorExistente.get();
+        } else {
+            autor = Autor.builder()
+                    .nombre(datosLibro.autores().get(0).nombre())
+                    .fechaNac(datosLibro.autores().get(0).fechaNac())
+                    .fechaFallecimiento(datosLibro.autores().get(0).fechaFallecimiento())
+                    .build();
 
-        List<Autor> autores = new ArrayList<>();
+            autor = autorRepository.save(autor);
+        }
+
 
         Libro libro = Libro.builder()
                 .titulo(datosLibro.titulo())
                 .idioma(datosLibro.idiomas().get(0))
                 .numeroDescargas(datosLibro.numeroDescargas())
+                .autor(autor)
                 .build();
 
-        datosLibro.autores().stream()
-                .forEach(a -> autores.add(Autor.builder()
-                        .nombre(a.nombre())
-                        .fechaNac(a.fechaNac())
-                        .libro(libro)
-                        .build()));
+        libroRepository.save(libro);
 
-        libro.setAutores(autores);
+        imprimirLibro(libro);
+    }
 
-        repositorio.save(libro);
+    private void getLibrosRegistrados(){
+        List<Libro> libros = libroRepository.findAll();
+        libros.forEach(this::imprimirLibro);
+    }
+
+    private void getAutoresRegistrados(){
+        List<Autor> autores = autorRepository.findAllAutoresConLibros();
+        autores.forEach(this::imprimirAutor);
+    }
+
+    private void imprimirLibro(Libro libro){
         System.out.println("----- LIBRO -----");
-                        System.out.println("Titulo: " + libro.getTitulo());
-                        if(autores.size() > 1){
-                            System.out.println("Autores: ");
-                            autores.forEach(a -> {
-                                System.out.println("        " + a.getNombre());
-                            });
-                        } else {
-                            System.out.println("Autor: " + autores.get(0).getNombre());
-                        }
-                        System.out.println("Idioma: " + libro.getIdioma());
-                        System.out.println("Numero de descargas: " + libro.getNumeroDescargas());
-                        System.out.println("-----------");
+        System.out.println("Titulo: " + libro.getTitulo());
+        System.out.println("Autor: " + libro.getAutor().getNombre());
+        System.out.println("Idioma: " + libro.getIdioma());
+        System.out.println("Numero de descargas: " + libro.getNumeroDescargas());
+        System.out.println("-----------");
+        System.out.println("");
+    }
+
+    private void imprimirAutor(Autor autor){
+        List<String> libros = autor.getLibros().stream()
+                .map(Libro::getTitulo)
+                .toList();
+        System.out.println("Nombre: " + autor.getNombre());
+        System.out.println("Fecha de nacimiento: " + autor.getFechaNac());
+        System.out.println("Fecha de fallecimiento: " + autor.getFechaFallecimiento());
+        System.out.println("Libros: " + libros);
     }
 
 

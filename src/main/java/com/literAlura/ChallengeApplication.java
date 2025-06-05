@@ -1,5 +1,6 @@
 package com.literAlura;
 
+import com.literAlura.repository.AutorRepository;
 import com.literAlura.repository.LibroRepository;
 import com.literAlura.service.Challenge;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +13,8 @@ public class ChallengeApplication implements CommandLineRunner {
 
 	@Autowired
 	private LibroRepository libroRepository;
+	@Autowired
+	private AutorRepository autorRepository;
 
 	public static void main(String[] args) {
 		SpringApplication.run(ChallengeApplication.class, args);
@@ -19,7 +22,7 @@ public class ChallengeApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		Challenge challenge = new Challenge(libroRepository);
+		Challenge challenge = new Challenge(libroRepository, autorRepository);
 		challenge.menu();
 	}
 }

@@ -3,7 +3,6 @@ package com.literAlura.model;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.List;
 
 @Getter
 @Setter
@@ -18,8 +17,9 @@ public class Libro {
     private Long id;
     @Column(unique = true)
     private String titulo;
-    @OneToMany(mappedBy = "libro", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    private List<Autor> autores;
+    @ManyToOne
+    @JoinColumn(name = "autor_id")
+    private Autor autor;
     private String idioma;
     private Double numeroDescargas;
 }

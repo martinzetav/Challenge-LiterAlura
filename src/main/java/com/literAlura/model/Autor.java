@@ -3,6 +3,8 @@ package com.literAlura.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,7 +18,7 @@ public class Autor {
     private Long id;
     private String nombre;
     private String fechaNac;
-    @ManyToOne
-    @JoinColumn(name = "libro_id")
-    private Libro libro;
+    private String fechaFallecimiento;
+    @OneToMany(mappedBy = "autor", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Libro> libros;
 }
